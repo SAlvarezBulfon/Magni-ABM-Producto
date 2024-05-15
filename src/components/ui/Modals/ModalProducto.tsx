@@ -188,16 +188,16 @@ const ModalProducto: React.FC<ModalProductoProps> = ({
                 idUnidadMedida: unidadMedida,
                 idsArticuloManufacturadoDetalles: dataIngredients.map((detalle) => detalle.id),
             };
-    
+
             console.log(productoPost);
             let response;
-    
-            if (isEditMode) {
-                response = await productoService.put(`${URL}/ArticuloManufacturado`, productoAEditar?.id || 0, productoPost);
+
+            if (isEditMode && productoAEditar) {
+                response = await productoService.put(`${URL}/ArticuloManufacturado`, productoAEditar?.id, productoPost);
             } else {
                 response = await productoService.post(`${URL}/ArticuloManufacturado`, productoPost);
             }
-    
+
             if (response) {
                 Swal.fire({
                     title: '¡Éxito!',
@@ -221,7 +221,7 @@ const ModalProducto: React.FC<ModalProductoProps> = ({
                     container: 'my-swal',
                 },
             });
-    
+
             // Rollback eliminando los detalles del producto creado
             if (!isEditMode) {
                 try {
@@ -234,6 +234,7 @@ const ModalProducto: React.FC<ModalProductoProps> = ({
             }
         }
     };
+
     
     // En el bloque condicional if (!isEditMode), asegúrate de incluir valores por defecto para denominación y precioVenta
     if (!isEditMode) {
