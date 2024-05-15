@@ -46,6 +46,7 @@ const ModalProducto: React.FC<ModalProductoProps> = ({
     const [selectedInsumoId, setSelectedInsumoId] = useState<number | null>(null);
     const [cantidadInsumo, setCantidadInsumo] = useState<number>(0);
     const [unidadMedidaInsumo, setUnidadMedidaInsumo] = useState<string>('N/A');
+    
 
     const fetchUnidadesMedida = async () => {
         try {
@@ -66,13 +67,6 @@ const ModalProducto: React.FC<ModalProductoProps> = ({
         }
     };
 
-
-    
-    useEffect(() => {
-
-        fetchUnidadesMedida();
-        fetchInsumos();
-    }, []);
 
     const validationSchema = Yup.object().shape({
         descripcion: Yup.string().required('Campo requerido'),
@@ -164,7 +158,6 @@ const ModalProducto: React.FC<ModalProductoProps> = ({
       };
 
 
-
       const columns: Column[] = [
         { 
           id: "ingrediente", 
@@ -177,20 +170,20 @@ const ModalProducto: React.FC<ModalProductoProps> = ({
           renderCell: (element) => <>{element?.articuloInsumo?.unidadMedida?.denominacion || 'N/A'}</> 
         },
         { id: "cantidad", label: "Cantidad", renderCell: (element) => <>{element?.cantidad || 'N/A'}</> },
-      ];
+    ];
       
     
       
     
       
 
-      const handleSubmit = async (values: IProducto) => {
+    const handleSubmit = async (values: IProducto) => {
         try {
             const productoPost: ProductoPost = {
-                denominacion: values.descripcion,
+                denominacion: values.denominacion,
                 descripcion: values.descripcion,
                 tiempoEstimadoMinutos: values.tiempoEstimadoMinutos,
-                precioVenta: 0, // Ajustar este valor según corresponda
+                precioVenta: values.precioVenta, // Incluir precio de venta
                 preparacion: values.preparacion,
                 idUnidadMedida: unidadMedida,
                 idsArticuloManufacturadoDetalles: dataIngredients.map((detalle) => detalle.id),
@@ -242,6 +235,30 @@ const ModalProducto: React.FC<ModalProductoProps> = ({
         }
     };
     
+    // En el bloque condicional if (!isEditMode), asegúrate de incluir valores por defecto para denominación y precioVenta
+    if (!isEditMode) {
+        initialValues = {
+            denominacion: '', // Incluir nombre
+            descripcion: '',
+            tiempoEstimadoMinutos: 0,
+            preparacion: '',
+            precioVenta: 0, // Incluir precio de venta
+            unidadMedida: '',
+            idsArticuloManufacturadoDetalles: [],
+        };
+    }
+    
+
+    useEffect(() => {
+        if (isEditMode && productoAEditar) {
+            const detalles = productoAEditar.productoDetalle
+            console.log(detalles)
+            setDataIngredients(detalles)
+        }
+        fetchUnidadesMedida();
+        fetchInsumos();
+    }, [isEditMode, productoAEditar]);
+    
 
     useEffect(() => {
         if (selectedInsumoId !== null) {
@@ -272,8 +289,10 @@ const ModalProducto: React.FC<ModalProductoProps> = ({
             validationSchema={validationSchema}
             onSubmit={handleSubmit}
             isEditMode={isEditMode}
-        >
+        >   
+            <TextFieldValue label="Nombre" name="denominacion" type="text" placeholder="Nombre" />
             <TextFieldValue label="Descripción" name="descripcion" type="text" placeholder="Descripción" />
+            <TextFieldValue label="Precio de venta" name="precioVenta" type="number" placeholder="Precio" />
             <TextFieldValue label="Tiempo Estimado (minutos)" name="tiempoEstimadoMinutos" type="number" placeholder="Tiempo Estimado" />
             <TextFieldValue label="Preparación" name="preparacion" type="textarea" placeholder="Preparación" />
             <FormControl fullWidth>
@@ -350,6 +369,7 @@ const ModalProducto: React.FC<ModalProductoProps> = ({
                 onEdit={handleEditIngredient}
                 onDelete={onDeleteProductoDetalle}
             />
+
 
         </GenericModal>
     );

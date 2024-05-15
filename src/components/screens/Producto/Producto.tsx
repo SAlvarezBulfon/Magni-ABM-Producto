@@ -75,7 +75,9 @@ const Producto = () => {
   };
 
   const columns: Column[] = [
-    { id: "descripcion", label: "Nombre", renderCell: (producto) => <>{producto.descripcion}</> },
+    { id: "denominacion", label: "Nombre", renderCell: (producto) => <>{producto.denominacion}</> },
+    { id: "descripcion", label: "Descripción", renderCell: (producto) => <>{producto.descripcion}</> },
+    { id: "precioVenta", label: "Precio de Venta", renderCell: (producto) => <>{producto.precioVenta}</> },
     { id: "preparacion", label: "Preparación", renderCell: (producto) => <>{producto.preparacion}</> },
     { id: "unidadMedida", label: "Unidad de Medida", renderCell: (producto) => <>{producto.unidadMedida.denominacion}</> },
     {
