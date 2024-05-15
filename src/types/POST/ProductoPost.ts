@@ -1,10 +1,12 @@
-import DataModel from "../DataModel";
 
-export default interface ProductoPost extends DataModel<ProductoPost> {
+
+export default interface ProductoPost {
+    denominacion: string;
     descripcion: string;
     tiempoEstimadoMinutos: number;
+    precioVenta: number
     preparacion: string;
-    unidadMedida: number;
+    idUnidadMedida: number;
     idsArticuloManufacturadoDetalles: number[];
   }
   

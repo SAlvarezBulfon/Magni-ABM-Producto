@@ -1,7 +1,8 @@
 import ProductoDetalle from '../../types/IProductoDetalle';
+import ProductoDetallePost from '../../types/POST/ProductoDetallePost';
 import { createGenericSlice } from './GenericReducer';
 
-const productoDetalleSlice = createGenericSlice<ProductoDetalle[]>('productoDetalleState', { data: [] });
+const productoDetalleSlice = createGenericSlice<ProductoDetalle| ProductoDetallePost[]>('productoDetalleState', { data: [] });
 
 export const { setData: setProductoDetalle, resetData: resetProductoDetalle } = productoDetalleSlice.actions;
 

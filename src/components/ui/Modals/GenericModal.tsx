@@ -17,7 +17,6 @@ interface ModalProps {
   isEditMode: boolean;
 }
 
-
 const GenericModal: React.FC<ModalProps> = ({ modalName, title, initialValues, validationSchema, onSubmit, children, isEditMode }) => {
   const dispatch = useDispatch();
   const showModal = useSelector((state: RootState) => state.modal[modalName]);
@@ -46,8 +45,21 @@ const GenericModal: React.FC<ModalProps> = ({ modalName, title, initialValues, v
   };
 
   return (
-    <Modal open={showModal} onClose={handleClose} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div style={{ backgroundColor: 'white', padding: '20px', width: '400px', borderRadius: '8px' }}>
+    <Modal 
+      open={showModal} 
+      onClose={handleClose} 
+      style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+    >
+      <div 
+        style={{ 
+          backgroundColor: 'white', 
+          padding: '20px', 
+          width: '700px', 
+          height: '400px', 
+          borderRadius: '8px',
+          overflow: 'auto'
+        }}
+      >
         <Typography variant="h5">{title}</Typography>
         <Formik
           initialValues={initialValues}

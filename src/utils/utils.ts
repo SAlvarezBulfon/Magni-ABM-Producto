@@ -1,5 +1,6 @@
 import { Dispatch, SetStateAction } from "react";
 import Swal from "sweetalert2";
+import './swal.css'
 
 
 export const onDelete = async (
@@ -19,6 +20,9 @@ export const onDelete = async (
       cancelButtonColor: '#d33',
       confirmButtonText: 'Sí, eliminar',
       cancelButtonText: 'Cancelar',
+      customClass: {
+        container: 'my-swal', // Aquí agregamos la clase my-swal
+      },
     });
 
     if (!result.isConfirmed) {
@@ -32,16 +36,31 @@ export const onDelete = async (
     if (successCallback) {
       successCallback();
     }
-    await Swal.fire('¡Eliminado!', 'El elemento ha sido eliminado correctamente', 'success');
+    await Swal.fire({
+      title: '¡Eliminado!',
+      text: 'El elemento ha sido eliminado correctamente',
+      icon: 'success',
+      customClass: {
+        container: 'my-swal', 
+      },
+    });
   } catch (error) {
     // Manejo de errores
     console.error('Error al eliminar:', error);
     if (errorCallback) {
       errorCallback(error);
     }
-    await Swal.fire('Error', 'Ha ocurrido un error al intentar eliminar el elemento', 'error');
+    await Swal.fire({
+      title: 'Error',
+      text: 'Ha ocurrido un error al intentar eliminar el elemento',
+      icon: 'error',
+      customClass: {
+        container: 'my-swal',
+      },
+    });
   }
 };
+
 
 
 /**

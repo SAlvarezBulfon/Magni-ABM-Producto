@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { Box, Typography, Button, Container, Tooltip, IconButton } from "@mui/material";
-import { Add, Visibility } from "@mui/icons-material";
+import { Box, Typography, Button, Container} from "@mui/material";
+import { Add } from "@mui/icons-material";
 import { useAppDispatch, useAppSelector } from "../../../hooks/redux";
 import { setProducto } from "../../../redux/slices/ProductoReducer";
 import ProductoService from "../../../services/ProductoService";
@@ -82,20 +82,6 @@ const Producto = () => {
       id: "tiempoEstimadoMinutos",
       label: "Tiempo estimado en minutos",
       renderCell: (producto) => <>{producto.tiempoEstimadoMinutos}</>,
-    },
-    {
-      id: "acciones",
-      label: "Acciones",
-      renderCell: (producto) => (
-        <>
-          <Tooltip title="Ver detalles">
-            <IconButton onClick={() => handleEdit(producto as IProducto)} aria-label="Ver detalles">
-              <Visibility />
-            </IconButton>
-          </Tooltip>
-          {/* Aquí puedes añadir más botones de acciones si es necesario */}
-        </>
-      ),
     },
   ];
 
