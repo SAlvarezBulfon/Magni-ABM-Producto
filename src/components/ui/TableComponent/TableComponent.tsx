@@ -8,7 +8,7 @@ import Column from '../../../types/Column';
 interface Props{
   data: any[];
   columns: Column[];
-  onEdit: (item: any) => void; 
+  onEdit?: (item: any) => void; 
   onDelete: (item:any ) => void; 
 }
 
@@ -73,7 +73,9 @@ const TableComponent: React.FC<Props> = ({ data, columns, onEdit, onDelete }) =>
               <TableCell>
                 <Box sx={{ display: 'flex'}}>
                   {/* Utilizamos los nuevos componentes de botones */}
-                  <EditButton onClick={() => onEdit(row)} />
+                  {onEdit &&
+                    <EditButton onClick={() => onEdit(row)} />
+                  }
                   <DeleteButton onClick={() => onDelete(row)} />
                 </Box>
               </TableCell>

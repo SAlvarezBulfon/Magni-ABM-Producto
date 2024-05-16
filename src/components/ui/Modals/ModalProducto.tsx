@@ -40,12 +40,12 @@ const ModalProducto: React.FC<ModalProductoProps> = ({
     const URL = import.meta.env.VITE_API_URL;
 
     const [unidadMedidaOptions, setUnidadMedidaOptions] = useState<{ id: number; denominacion: string }[]>([]);
-    const [unidadMedida, setUnidadMedida] = useState<number>(initialValues.unidadMedida);
     const [insumos, setInsumos] = useState<IInsumo[]>([]);
     const [dataIngredients, setDataIngredients] = useState<any[]>([]);
     const [selectedInsumoId, setSelectedInsumoId] = useState<number | null>(null);
     const [cantidadInsumo, setCantidadInsumo] = useState<number>(0);
     const [unidadMedidaInsumo, setUnidadMedidaInsumo] = useState<string>('N/A');
+    const [unidadMedidaProducto, setUnidadMedidaProducto] = useState<number>(initialValues.idUnidadMedida || 0);
 
     const fetchUnidadesMedida = async () => {
         try {
@@ -84,32 +84,18 @@ const ModalProducto: React.FC<ModalProductoProps> = ({
         precioVenta: Yup.number().required('Campo requerido'),
     });
 
-    const handleEditIngredient = async (editedIngredient: any) => {
-        try {
-            // Lógica de edición del ingrediente
-            // Aquí puedes mostrar un modal para editar los detalles del ingrediente
-    
-            // Actualizamos el estado con el ingrediente editado
-            const updatedIngredients = dataIngredients.map((ingredient) =>
-                ingredient.id === editedIngredient.id ? editedIngredient : ingredient
-            );
-            setDataIngredients(updatedIngredients);
-    
-            // Luego, puedes enviar los cambios a la base de datos si es necesario
-        } catch (error) {
-            console.error('Error al editar el ingrediente:', error);
-        }
-    };
-    
+
     const onDeleteProductoDetalle = async (productoDetalle: IProductoDetalle) => {
         try {
-            // Eliminamos el ingrediente de la base de datos
-            await productoDetalleService.delete(`${URL}/ArticuloManufacturadoDetalle`, productoDetalle.id);
-    
-            // Actualizamos el estado eliminando el ingrediente
+            if (isEditMode && productoAEditar) {
+                // Si está en modo de edición, usamos el servicio para eliminar el detalle del producto de la base de datos
+                await productoDetalleService.delete(`${URL}/ArticuloManufacturadoDetalle`, productoDetalle.id);
+            }
+
+            // Independientemente de si está en modo de edición o no, actualizamos el estado eliminando el detalle
             const updatedIngredients = dataIngredients.filter((ingredient) => ingredient.id !== productoDetalle.id);
             setDataIngredients(updatedIngredients);
-    
+
             // Mostramos un mensaje de éxito
             Swal.fire({
                 title: '¡Éxito!',
@@ -142,9 +128,9 @@ const ModalProducto: React.FC<ModalProductoProps> = ({
                         idArticuloInsumo: selectedInsumo.id,
                     };
                     const createdDetalle = await productoDetalleService.post(`${URL}/ArticuloManufacturadoDetalle`, newDetalle);
-        
-                    setDataIngredients([createdDetalle]); // Limpia la tabla de ingredientes y agrega el nuevo ingrediente
-        
+
+                    setDataIngredients([...dataIngredients, createdDetalle]); // Agrega el nuevo ingrediente al estado existente
+
                     setSelectedInsumoId(null);
                     setCantidadInsumo(0);
                     setUnidadMedidaInsumo('N/A');
@@ -162,18 +148,19 @@ const ModalProducto: React.FC<ModalProductoProps> = ({
             }
         }
     };
-    
+
+
 
     const columns: Column[] = [
-        { 
-            id: "ingrediente", 
-            label: "Ingrediente", 
-            renderCell: (element) => <>{element?.articuloInsumo?.denominacion || 'N/A'}</> 
+        {
+            id: "ingrediente",
+            label: "Ingrediente",
+            renderCell: (element) => <>{element?.articuloInsumo?.denominacion || 'N/A'}</>
         },
-        { 
-            id: "unidadMedida", 
-            label: "Unidad de Medida", 
-            renderCell: (element) => <>{element?.articuloInsumo?.unidadMedida?.denominacion || 'N/A'}</> 
+        {
+            id: "unidadMedida",
+            label: "Unidad de Medida",
+            renderCell: (element) => <>{element?.articuloInsumo?.unidadMedida?.denominacion || 'N/A'}</>
         },
         { id: "cantidad", label: "Cantidad", renderCell: (element) => <>{element?.cantidad || 'N/A'}</> },
     ];
@@ -186,15 +173,23 @@ const ModalProducto: React.FC<ModalProductoProps> = ({
                 tiempoEstimadoMinutos: values.tiempoEstimadoMinutos,
                 precioVenta: values.precioVenta,
                 preparacion: values.preparacion,
-                idUnidadMedida: unidadMedida,
+                idUnidadMedida: unidadMedidaProducto,
                 idsArticuloManufacturadoDetalles: dataIngredients.map((detalle) => detalle.id),
             };
 
             let response;
 
             if (isEditMode && productoAEditar) {
+                // Si estamos en modo de edición, primero actualizamos los detalles del producto
+                // Luego actualizamos el producto con los detalles actualizados
+                const updatedProduct = {
+                    ...productoAEditar,
+                    idsArticuloManufacturadoDetalles: dataIngredients.map((detalle) => detalle.id),
+                };
+                await productoService.put(`${URL}/ArticuloManufacturado`, productoAEditar.id, updatedProduct);
                 response = await productoService.put(`${URL}/ArticuloManufacturado`, productoAEditar.id, productoPost);
             } else {
+                // Si estamos en modo de añadir, creamos el producto con los detalles
                 response = await productoService.post(`${URL}/ArticuloManufacturado`, productoPost);
             }
 
@@ -224,6 +219,7 @@ const ModalProducto: React.FC<ModalProductoProps> = ({
 
             if (!isEditMode) {
                 try {
+                    // Si ocurrió un error al enviar los datos en modo de añadir, eliminamos los detalles creados
                     await Promise.all(dataIngredients.map(async (detalle) => {
                         await productoDetalleService.delete(`${URL}/ArticuloManufacturadoDetalle`, detalle.id);
                     }));
@@ -234,23 +230,20 @@ const ModalProducto: React.FC<ModalProductoProps> = ({
         }
     };
 
-    useEffect(() => {
-        if (!isEditMode) {
-            setDataIngredients([]);
-        }
-        if (isEditMode && productoAEditar) {
-            fetchProductoDetalle();
-        }
-    }, [isEditMode, productoAEditar]);
-    
 
     useEffect(() => {
         fetchUnidadesMedida();
         fetchInsumos();
+        if (!isEditMode) {
+            setDataIngredients([]);
+
+        }
         if (isEditMode && productoAEditar) {
             fetchProductoDetalle();
+            setUnidadMedidaProducto(productoAEditar.idUnidadMedida);
         }
     }, [isEditMode, productoAEditar]);
+
 
     useEffect(() => {
         if (selectedInsumoId !== null) {
@@ -271,23 +264,24 @@ const ModalProducto: React.FC<ModalProductoProps> = ({
             validationSchema={validationSchema}
             onSubmit={handleSubmit}
             isEditMode={isEditMode}
-        >   
+        >
             <TextFieldValue label="Nombre" name="denominacion" type="text" placeholder="Nombre" />
             <TextFieldValue label="Descripción" name="descripcion" type="text" placeholder="Descripción" />
             <TextFieldValue label="Precio de venta" name="precioVenta" type="number" placeholder="Precio" />
             <TextFieldValue label="Tiempo Estimado (minutos)" name="tiempoEstimadoMinutos" type="number" placeholder="Tiempo Estimado" />
             <TextFieldValue label="Preparación" name="preparacion" type="textarea" placeholder="Preparación" />
+
             <FormControl fullWidth>
-                <label className='label' style={{ marginTop: '16px' }}>Unidad de Medida</label>
+                <label className='label' style={{ marginTop: '16px' }}>Unidad de Medida del Producto</label>
                 <Select
-                    labelId="unidadMedidaLabel"
-                    id="unidadMedida"
-                    value={unidadMedida}
-                    onChange={(e) => setUnidadMedida(e.target.value as number)}
+                    labelId="unidadMedidaProductoLabel"
+                    id="unidadMedidaProducto"
+                    value={unidadMedidaProducto}
+                    onChange={(e) => setUnidadMedidaProducto(e.target.value as number)}
                     displayEmpty
                 >
                     <MenuItem disabled value="">
-                        Seleccione una unidad de medida
+                        Seleccione una unidad de medida para el producto
                     </MenuItem>
                     {unidadMedidaOptions.map((unidad) => (
                         <MenuItem key={unidad.id} value={unidad.id}>
@@ -347,7 +341,6 @@ const ModalProducto: React.FC<ModalProductoProps> = ({
             <TableComponent
                 data={dataIngredients}
                 columns={columns}
-                onEdit={handleEditIngredient}
                 onDelete={onDeleteProductoDetalle}
             />
         </GenericModal>
