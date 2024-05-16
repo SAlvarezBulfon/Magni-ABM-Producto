@@ -54,7 +54,7 @@ const GenericModal: React.FC<ModalProps> = ({ modalName, title, initialValues, v
         style={{ 
           backgroundColor: 'white', 
           padding: '20px', 
-          width: '700px', 
+          width: '800px', 
           height: '400px', 
           borderRadius: '8px',
           overflow: 'auto'

@@ -16,6 +16,8 @@ import TableComponent from '../TableComponent/TableComponent';
 import Column from '../../../types/Column';
 import IProductoDetalle from '../../../types/IProductoDetalle';
 import '../../../utils/swal.css'
+import ICategoria from '../../../types/ICategoria';
+import CategoriaService from '../../../services/CategoriaService';
 
 
 interface ModalProductoProps {
@@ -37,6 +39,7 @@ const ModalProducto: React.FC<ModalProductoProps> = ({
     const productoDetalleService = new ProductoDetalleService();
     const unidadMedidaService = new UnidadMedidaService();
     const insumoService = new InsumoService();
+    const categoriaService = new CategoriaService();
     const URL = import.meta.env.VITE_API_URL;
 
     const [unidadMedidaOptions, setUnidadMedidaOptions] = useState<{ id: number; denominacion: string }[]>([]);
@@ -46,6 +49,17 @@ const ModalProducto: React.FC<ModalProductoProps> = ({
     const [cantidadInsumo, setCantidadInsumo] = useState<number>(0);
     const [unidadMedidaInsumo, setUnidadMedidaInsumo] = useState<string>('N/A');
     const [unidadMedidaProducto, setUnidadMedidaProducto] = useState<number>(initialValues.idUnidadMedida || 0);
+    const [categoriasInsumo, setCategoriasInsumo] = useState<ICategoria[]>([]);
+    const [selectedCategoria, setSelecteCategoria] = useState<number | null>(null);
+
+    const fetchCategoria = async () => {
+        try {
+            const categorias = await categoriaService.getAll(URL + '/categoria'); // Ajusta esto según tu servicio
+            setCategoriasInsumo(categorias.filter(categoria => categoria.esInsumo));
+        } catch (error) {
+            console.error('Error al obtener las categorías de insumos:', error);
+        }
+    };
 
     const fetchUnidadesMedida = async () => {
         try {
@@ -87,7 +101,10 @@ const ModalProducto: React.FC<ModalProductoProps> = ({
 
     const onDeleteProductoDetalle = async (productoDetalle: IProductoDetalle) => {
         try {
-
+            if (isEditMode && productoAEditar) {
+                // Si está en modo de edición, usamos el servicio para eliminar el detalle del producto de la base de datos
+                await productoDetalleService.delete(`${URL}/ArticuloManufacturadoDetalle`, productoDetalle.id);
+            }
             //actualizamos el estado eliminando el detalle
             const updatedIngredients = dataIngredients.filter((ingredient) => ingredient.id !== productoDetalle.id);
             setDataIngredients(updatedIngredients);
@@ -228,6 +245,7 @@ const ModalProducto: React.FC<ModalProductoProps> = ({
 
 
     useEffect(() => {
+        fetchCategoria();
         fetchUnidadesMedida();
         fetchInsumos();
         if (!isEditMode) {
@@ -294,22 +312,49 @@ const ModalProducto: React.FC<ModalProductoProps> = ({
                     <Grid item xs={3}>
                         <FormControl fullWidth>
                             <Select
-                                value={selectedInsumoId || ''}
-                                onChange={(e) => setSelectedInsumoId(e.target.value as number)}
+                                labelId="categoriasInsumoLabel"
+                                id="categoriasInsumo"
+                                value={selectedCategoria || ''}
+                                onChange={(e) => {
+                                    setSelecteCategoria(e.target.value as number);
+                                    setSelectedInsumoId(null);  // Reset insumo selection
+                                    setUnidadMedidaInsumo('N/A');  // Reset unidad de medida
+                                }}
                                 displayEmpty
                             >
-                                <MenuItem value="" disabled>
-                                    Seleccione un ingrediente
+                                <MenuItem disabled value="">
+                                    Seleccione una categoría de insumo
                                 </MenuItem>
-                                {insumos.map((insumo) => (
-                                    <MenuItem key={insumo.id} value={insumo.id}>
-                                        {insumo.denominacion}
+                                {categoriasInsumo.map((categoria) => (
+                                    <MenuItem key={categoria.id} value={categoria.id}>
+                                        {categoria.denominacion}
                                     </MenuItem>
                                 ))}
                             </Select>
                         </FormControl>
                     </Grid>
                     <Grid item xs={3}>
+                        <FormControl fullWidth>
+                        <Select
+                                value={selectedInsumoId || ''}
+                                onChange={(e) => setSelectedInsumoId(e.target.value as number)}
+                                displayEmpty
+                                disabled={!selectedCategoria}
+                            >
+                                <MenuItem value="" disabled>
+                                    Seleccione un ingrediente
+                                </MenuItem>
+                                {categoriasInsumo
+                                    .find(categoria => categoria.id === selectedCategoria)
+                                    ?.insumos.map((insumo: IInsumo) => (
+                                        <MenuItem key={insumo.id} value={insumo.id}>
+                                            {insumo.denominacion}
+                                        </MenuItem>
+                                    ))}
+                            </Select>
+                        </FormControl>
+                    </Grid>
+                    <Grid item xs={2}>
                         <TextField
                             type="text"
                             label="Unidad de Medida"
@@ -318,32 +363,34 @@ const ModalProducto: React.FC<ModalProductoProps> = ({
                             disabled
                         />
                     </Grid>
-                    <Grid item xs={3}>
+                    <Grid item xs={2}>
                         <TextField
                             type="number"
                             label="Cantidad"
                             value={cantidadInsumo}
                             onChange={(e) => setCantidadInsumo(parseFloat(e.target.value))}
                             variant="filled"
+                            disabled={!selectedInsumoId}
                         />
                     </Grid>
-                    <Grid item xs={3}>
-                        <Button onClick={handleNewIngredient} variant="contained" color="primary">
+                    <Grid item xs={2}>
+                        <Button
+                            onClick={handleNewIngredient}
+                            variant="contained"
+                            color="primary"
+                            disabled={!selectedInsumoId || cantidadInsumo <= 0}
+                        >
                             Añadir
                         </Button>
                     </Grid>
                 </Grid>
             </Box>
-            {isEditMode &&
-                <TableComponent
-                    data={dataIngredients}
-                    columns={columns}
-                />}
-            { !isEditMode && <TableComponent
-            data={dataIngredients}
-            columns={columns}
-            onDelete={onDeleteProductoDetalle}
-        />}
+            <TableComponent
+                data={dataIngredients}
+                columns={columns}
+                onDelete={onDeleteProductoDetalle}
+            />
+
         </GenericModal>
     );
 };
