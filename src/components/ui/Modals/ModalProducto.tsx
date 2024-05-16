@@ -334,16 +334,16 @@ const ModalProducto: React.FC<ModalProductoProps> = ({
                     </Grid>
                 </Grid>
             </Box>
-            {!isEditMode &&
+            {isEditMode &&
                 <TableComponent
                     data={dataIngredients}
                     columns={columns}
-                    onDelete={onDeleteProductoDetalle}
                 />}
-            <TableComponent
+            { !isEditMode && <TableComponent
             data={dataIngredients}
             columns={columns}
-        />
+            onDelete={onDeleteProductoDetalle}
+        />}
         </GenericModal>
     );
 };
