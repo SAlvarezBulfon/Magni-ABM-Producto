@@ -46,7 +46,6 @@ const ModalProducto: React.FC<ModalProductoProps> = ({
     const [selectedInsumoId, setSelectedInsumoId] = useState<number | null>(null);
     const [cantidadInsumo, setCantidadInsumo] = useState<number>(0);
     const [unidadMedidaInsumo, setUnidadMedidaInsumo] = useState<string>('N/A');
-    
 
     const fetchUnidadesMedida = async () => {
         try {
@@ -56,7 +55,17 @@ const ModalProducto: React.FC<ModalProductoProps> = ({
             console.error('Error al obtener las unidades de medida:', error);
         }
     };
-    
+
+    const fetchProductoDetalle = async () => {
+        if (productoAEditar) {
+            try {
+                const detalles = await productoDetalleService.getAll(`${URL}/ArticuloManufacturado/allDetalles/${productoAEditar.id}`);
+                setDataIngredients(detalles);
+            } catch (error) {
+                console.error('Error al obtener los detalles del producto:', error);
+            }
+        }
+    };
 
     const fetchInsumos = async () => {
         try {
@@ -67,11 +76,12 @@ const ModalProducto: React.FC<ModalProductoProps> = ({
         }
     };
 
-
     const validationSchema = Yup.object().shape({
+        denominacion: Yup.string().required('Campo requerido'),
         descripcion: Yup.string().required('Campo requerido'),
         tiempoEstimadoMinutos: Yup.number().required('Campo requerido'),
         preparacion: Yup.string().required('Campo requerido'),
+        precioVenta: Yup.number().required('Campo requerido'),
     });
 
     const handleEditIngredient = async (editedIngredient: any) => {
@@ -121,61 +131,52 @@ const ModalProducto: React.FC<ModalProductoProps> = ({
             });
         }
     };
-    
 
     const handleNewIngredient = async () => {
         if (selectedInsumoId !== null && cantidadInsumo > 0) {
-          const selectedInsumo = insumos.find((insumo) => insumo.id === selectedInsumoId);
-          if (selectedInsumo) {
-            try {
-              // Creamos el nuevo detalle en la base de datos
-              const newDetalle = {
-                cantidad: cantidadInsumo,
-                idArticuloInsumo: selectedInsumo.id,
-              };
-              const createdDetalle = await productoDetalleService.post(`${URL}/ArticuloManufacturadoDetalle`, newDetalle);
-      
-              // Agregamos el ID del detalle creado a la lista
-              setDataIngredients([...dataIngredients, createdDetalle]);
-      
-              // Reiniciamos los campos
-              setSelectedInsumoId(null);
-              setCantidadInsumo(0);
-              setUnidadMedidaInsumo('N/A');
-            } catch (error) {
-              console.error('Error al crear el detalle:', error);
-              Swal.fire({
-                title: 'Error',
-                text: 'Ha ocurrido un error al crear el detalle',
-                icon: 'error',
-                customClass: {
-                  container: 'my-swal',
-                },
-              });
+            const selectedInsumo = insumos.find((insumo) => insumo.id === selectedInsumoId);
+            if (selectedInsumo) {
+                try {
+                    const newDetalle = {
+                        cantidad: cantidadInsumo,
+                        idArticuloInsumo: selectedInsumo.id,
+                    };
+                    const createdDetalle = await productoDetalleService.post(`${URL}/ArticuloManufacturadoDetalle`, newDetalle);
+        
+                    setDataIngredients([createdDetalle]); // Limpia la tabla de ingredientes y agrega el nuevo ingrediente
+        
+                    setSelectedInsumoId(null);
+                    setCantidadInsumo(0);
+                    setUnidadMedidaInsumo('N/A');
+                } catch (error) {
+                    console.error('Error al crear el detalle:', error);
+                    Swal.fire({
+                        title: 'Error',
+                        text: 'Ha ocurrido un error al crear el detalle',
+                        icon: 'error',
+                        customClass: {
+                            container: 'my-swal',
+                        },
+                    });
+                }
             }
-          }
         }
-      };
+    };
+    
 
-
-      const columns: Column[] = [
+    const columns: Column[] = [
         { 
-          id: "ingrediente", 
-          label: "Ingrediente", 
-          renderCell: (element) => <>{element?.articuloInsumo?.denominacion || 'N/A'}</> 
+            id: "ingrediente", 
+            label: "Ingrediente", 
+            renderCell: (element) => <>{element?.articuloInsumo?.denominacion || 'N/A'}</> 
         },
         { 
-          id: "unidadMedida", 
-          label: "Unidad de Medida", 
-          renderCell: (element) => <>{element?.articuloInsumo?.unidadMedida?.denominacion || 'N/A'}</> 
+            id: "unidadMedida", 
+            label: "Unidad de Medida", 
+            renderCell: (element) => <>{element?.articuloInsumo?.unidadMedida?.denominacion || 'N/A'}</> 
         },
         { id: "cantidad", label: "Cantidad", renderCell: (element) => <>{element?.cantidad || 'N/A'}</> },
     ];
-      
-    
-      
-    
-      
 
     const handleSubmit = async (values: IProducto) => {
         try {
@@ -183,17 +184,16 @@ const ModalProducto: React.FC<ModalProductoProps> = ({
                 denominacion: values.denominacion,
                 descripcion: values.descripcion,
                 tiempoEstimadoMinutos: values.tiempoEstimadoMinutos,
-                precioVenta: values.precioVenta, // Incluir precio de venta
+                precioVenta: values.precioVenta,
                 preparacion: values.preparacion,
                 idUnidadMedida: unidadMedida,
                 idsArticuloManufacturadoDetalles: dataIngredients.map((detalle) => detalle.id),
             };
 
-            console.log(productoPost);
             let response;
 
             if (isEditMode && productoAEditar) {
-                response = await productoService.put(`${URL}/ArticuloManufacturado`, productoAEditar?.id, productoPost);
+                response = await productoService.put(`${URL}/ArticuloManufacturado`, productoAEditar.id, productoPost);
             } else {
                 response = await productoService.post(`${URL}/ArticuloManufacturado`, productoPost);
             }
@@ -222,7 +222,6 @@ const ModalProducto: React.FC<ModalProductoProps> = ({
                 },
             });
 
-            // Rollback eliminando los detalles del producto creado
             if (!isEditMode) {
                 try {
                     await Promise.all(dataIngredients.map(async (detalle) => {
@@ -235,31 +234,23 @@ const ModalProducto: React.FC<ModalProductoProps> = ({
         }
     };
 
-    
-    // En el bloque condicional if (!isEditMode), asegúrate de incluir valores por defecto para denominación y precioVenta
-    if (!isEditMode) {
-        initialValues = {
-            denominacion: '', // Incluir nombre
-            descripcion: '',
-            tiempoEstimadoMinutos: 0,
-            preparacion: '',
-            precioVenta: 0, // Incluir precio de venta
-            unidadMedida: '',
-            idsArticuloManufacturadoDetalles: [],
-        };
-    }
+    useEffect(() => {
+        if (!isEditMode) {
+            setDataIngredients([]);
+        }
+        if (isEditMode && productoAEditar) {
+            fetchProductoDetalle();
+        }
+    }, [isEditMode, productoAEditar]);
     
 
     useEffect(() => {
-        if (isEditMode && productoAEditar) {
-            const detalles = productoAEditar.productoDetalle
-            console.log(detalles)
-            setDataIngredients(detalles)
-        }
         fetchUnidadesMedida();
         fetchInsumos();
+        if (isEditMode && productoAEditar) {
+            fetchProductoDetalle();
+        }
     }, [isEditMode, productoAEditar]);
-    
 
     useEffect(() => {
         if (selectedInsumoId !== null) {
@@ -271,16 +262,6 @@ const ModalProducto: React.FC<ModalProductoProps> = ({
             setUnidadMedidaInsumo('N/A');
         }
     }, [selectedInsumoId, insumos]);
-
-    if (!isEditMode) {
-        initialValues = {
-            descripcion: '',
-            tiempoEstimadoMinutos: 0,
-            preparacion: '',
-            unidadMedida: '',
-            idsArticuloManufacturadoDetalles: [],
-        };
-    }
 
     return (
         <GenericModal
@@ -297,8 +278,7 @@ const ModalProducto: React.FC<ModalProductoProps> = ({
             <TextFieldValue label="Tiempo Estimado (minutos)" name="tiempoEstimadoMinutos" type="number" placeholder="Tiempo Estimado" />
             <TextFieldValue label="Preparación" name="preparacion" type="textarea" placeholder="Preparación" />
             <FormControl fullWidth>
-                <label className='label' style={{ marginTop: '16px' }}>Unidad de Medida
-                </label>
+                <label className='label' style={{ marginTop: '16px' }}>Unidad de Medida</label>
                 <Select
                     labelId="unidadMedidaLabel"
                     id="unidadMedida"
@@ -370,9 +350,8 @@ const ModalProducto: React.FC<ModalProductoProps> = ({
                 onEdit={handleEditIngredient}
                 onDelete={onDeleteProductoDetalle}
             />
-
-
         </GenericModal>
     );
 };
+
 export default ModalProducto;

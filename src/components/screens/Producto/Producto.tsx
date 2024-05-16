@@ -71,6 +71,7 @@ const Producto = () => {
 
   const handleAddProducto = () => {
     setIsEditing(false);
+    setProductoEditar(undefined); // Resetea el producto a editar al añadir uno nuevo
     dispatch(toggleModal({ modalName: "modalProducto" }));
   };
 
@@ -108,9 +109,18 @@ const Producto = () => {
         <TableComponent data={filteredData} columns={columns} onDelete={onDeleteProducto} onEdit={handleEdit}/>
         <ModalProducto
           modalName="modalProducto"
-          initialValues={productoEditar || { id: 0, descripcion: "", tiempoEstimadoMinutos: 0, preparacion: "", unidadMedida: 0, idsArticuloManufacturadoDetalles: [] }}
+          initialValues={{
+            id: 0,
+            descripcion: "",
+            tiempoEstimadoMinutos: 0,
+            preparacion: "",
+            precioVenta: 0,
+            unidadMedida: 0,
+            idsArticuloManufacturadoDetalles: []
+          }}
           isEditMode={isEditing}
           getProductos={fetchProductos}
+          productoAEditar={productoEditar} // Pasar el producto a editar aquí
         />
       </Container>
     </Box>
