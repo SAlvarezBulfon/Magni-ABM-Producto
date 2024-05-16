@@ -1,15 +1,15 @@
 import React, { useState } from 'react';
 import { Table, TableHead, TableBody, TableRow, TableCell, TableSortLabel, TablePagination, Box } from '@mui/material';
-import DeleteButton from './DeleteButton'; 
+import DeleteButton from './DeleteButton';
 import EditButton from './EditButton';
 import Row from '../../../types/Row';
 import Column from '../../../types/Column';
 
-interface Props{
+interface Props {
   data: any[];
   columns: Column[];
-  onEdit?: (item: any) => void; 
-  onDelete: (item:any ) => void; 
+  onEdit?: (item: any) => void;
+  onDelete?: (item: any) => void;
 }
 
 const TableComponent: React.FC<Props> = ({ data, columns, onEdit, onDelete }) => {
@@ -45,44 +45,50 @@ const TableComponent: React.FC<Props> = ({ data, columns, onEdit, onDelete }) =>
 
   return (
     <>
-      <Table>
-        <TableHead>
-          <TableRow>
-            {columns.map((column) => (
-              <TableCell key={column.id}>
-                <TableSortLabel
-                  active={orderBy === column.id}
-                  direction={orderBy === column.id ? order : 'asc'}
-                  onClick={handleRequestSort(column.id)}
-                >
-                  {column.label}
-                </TableSortLabel>
-              </TableCell>
-            ))}
-            <TableCell>Acciones</TableCell> {/* Nueva columna para acciones */}
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {sortedData.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((row, index) => (
-            <TableRow key={index}>
-              {columns.map((column) => (
-                <TableCell key={column.id}>
-                  {column.renderCell ? column.renderCell(row) : row[column.id]}
-                </TableCell>
-              ))}
-              <TableCell>
-                <Box sx={{ display: 'flex'}}>
-                  {/* Utilizamos los nuevos componentes de botones */}
-                  {onEdit &&
-                    <EditButton onClick={() => onEdit(row)} />
-                  }
-                  <DeleteButton onClick={() => onDelete(row)} />
-                </Box>
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+<Table>
+  <TableHead>
+    <TableRow>
+      {columns.map((column) => (
+        <TableCell key={column.id}>
+          <TableSortLabel
+            active={orderBy === column.id}
+            direction={orderBy === column.id ? order : 'asc'}
+            onClick={handleRequestSort(column.id)}
+          >
+            {column.label}
+          </TableSortLabel>
+        </TableCell>
+      ))}
+      {/* Renderizamos la celda de acciones solo si se proporcionan las funciones onEdit y onDelete */}
+      {(onEdit || onDelete) &&
+        <TableCell>Acciones</TableCell>
+      }
+    </TableRow>
+  </TableHead>
+  <TableBody>
+    {sortedData.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((row, index) => (
+      <TableRow key={index}>
+        {columns.map((column) => (
+          <TableCell key={column.id}>
+            {column.renderCell ? column.renderCell(row) : row[column.id]}
+          </TableCell>
+        ))}
+        {(onEdit || onDelete) && // Renderizamos la celda de acciones solo si se proporcionan las funciones onEdit y onDelete
+          <TableCell>
+            <Box sx={{ display: 'flex' }}>
+              {onEdit &&
+                <EditButton onClick={() => onEdit(row)} />
+              }
+              {onDelete &&
+                <DeleteButton onClick={() => onDelete(row)} />}
+            </Box>
+          </TableCell>
+        }
+      </TableRow>
+    ))}
+  </TableBody>
+</Table>
+
       <TablePagination
         rowsPerPageOptions={[5, 10, 25]}
         component="div"

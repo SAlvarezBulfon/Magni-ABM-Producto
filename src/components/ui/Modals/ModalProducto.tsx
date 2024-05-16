@@ -87,12 +87,8 @@ const ModalProducto: React.FC<ModalProductoProps> = ({
 
     const onDeleteProductoDetalle = async (productoDetalle: IProductoDetalle) => {
         try {
-            if (isEditMode && productoAEditar) {
-                // Si está en modo de edición, usamos el servicio para eliminar el detalle del producto de la base de datos
-                await productoDetalleService.delete(`${URL}/ArticuloManufacturadoDetalle`, productoDetalle.id);
-            }
 
-            // Independientemente de si está en modo de edición o no, actualizamos el estado eliminando el detalle
+            //actualizamos el estado eliminando el detalle
             const updatedIngredients = dataIngredients.filter((ingredient) => ingredient.id !== productoDetalle.id);
             setDataIngredients(updatedIngredients);
 
@@ -338,11 +334,16 @@ const ModalProducto: React.FC<ModalProductoProps> = ({
                     </Grid>
                 </Grid>
             </Box>
+            {!isEditMode &&
+                <TableComponent
+                    data={dataIngredients}
+                    columns={columns}
+                    onDelete={onDeleteProductoDetalle}
+                />}
             <TableComponent
-                data={dataIngredients}
-                columns={columns}
-                onDelete={onDeleteProductoDetalle}
-            />
+            data={dataIngredients}
+            columns={columns}
+        />
         </GenericModal>
     );
 };
