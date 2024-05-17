@@ -41,7 +41,7 @@ const Producto = () => {
   }, [dispatch]);
 
   const onSearch = (query: string) => {
-    handleSearch(query, globalProductos, 'descripcion', setFilteredData);
+    handleSearch(query, globalProductos, 'denominacion', setFilteredData);
   };
 
   const onDeleteProducto = async (producto: IProducto) => {
@@ -81,6 +81,7 @@ const Producto = () => {
     { id: "precioVenta", label: "Precio de Venta", renderCell: (producto) => <>{producto.precioVenta}</> },
     { id: "preparacion", label: "Preparación", renderCell: (producto) => <>{producto.preparacion}</> },
     { id: "unidadMedida", label: "Unidad de Medida", renderCell: (producto) => <>{producto.unidadMedida.denominacion}</> },
+
     {
       id: "tiempoEstimadoMinutos",
       label: "Tiempo estimado en minutos",

@@ -186,26 +186,36 @@ const ModalProducto: React.FC<ModalProductoProps> = ({
                 tiempoEstimadoMinutos: values.tiempoEstimadoMinutos,
                 precioVenta: values.precioVenta,
                 preparacion: values.preparacion,
-                idUnidadMedida: unidadMedidaProducto,
+                idUnidadMedida: unidadMedidaProducto, // <-- Utilizamos la unidad de medida seleccionada en el formulario
                 idsArticuloManufacturadoDetalles: dataIngredients.map((detalle) => detalle.id),
             };
-
+    
             let response;
-
+    
             if (isEditMode && productoAEditar) {
                 // Si estamos en modo de edición, primero actualizamos los detalles del producto
                 // Luego actualizamos el producto con los detalles actualizados
                 const updatedProduct = {
                     ...productoAEditar,
+                    idUnidadMedida: unidadMedidaProducto,
                     idsArticuloManufacturadoDetalles: dataIngredients.map((detalle) => detalle.id),
                 };
                 await productoService.put(`${URL}/ArticuloManufacturado`, productoAEditar.id, updatedProduct);
-                response = await productoService.put(`${URL}/ArticuloManufacturado`, productoAEditar.id, productoPost);
-            } else {
-                // Si estamos en modo de añadir, creamos el producto con los detalles
-                response = await productoService.post(`${URL}/ArticuloManufacturado`, productoPost);
-            }
 
+                if (dataIngredients.length > 0) {
+                    const newIngredients = dataIngredients.filter((detalle) => !productoAEditar.idsArticuloManufacturadoDetalles.includes(detalle.id));
+                    updatedProduct.idsArticuloManufacturadoDetalles.push(...newIngredients.map((detalle) => detalle.id));
+                }
+
+                
+                response = await productoService.put(`${URL}/ArticuloManufacturado`, productoAEditar.id, productoPost);
+                getProductos();
+            } else {
+                
+                response = await productoService.post(`${URL}/ArticuloManufacturado`, productoPost);
+                getProductos();
+            }
+    
             if (response) {
                 Swal.fire({
                     title: '¡Éxito!',
@@ -229,7 +239,7 @@ const ModalProducto: React.FC<ModalProductoProps> = ({
                     container: 'my-swal',
                 },
             });
-
+    
             if (!isEditMode) {
                 try {
                     // Si ocurrió un error al enviar los datos en modo de añadir, eliminamos los detalles creados
@@ -242,7 +252,6 @@ const ModalProducto: React.FC<ModalProductoProps> = ({
             }
         }
     };
-
 
     useEffect(() => {
         fetchCategoria();
