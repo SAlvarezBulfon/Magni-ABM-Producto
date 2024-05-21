@@ -54,8 +54,8 @@ const GenericModal: React.FC<ModalProps> = ({ modalName, title, initialValues, v
         style={{ 
           backgroundColor: 'white', 
           padding: '20px', 
-          width: '800px', 
-          height: '400px', 
+          width: '90%', 
+          height: '90%', 
           borderRadius: '8px',
           overflow: 'auto'
         }}
@@ -70,11 +70,12 @@ const GenericModal: React.FC<ModalProps> = ({ modalName, title, initialValues, v
             <Form onSubmit={formikProps.handleSubmit}>
               {children}
               <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '20px' }}>
-                <Button variant="outlined" onClick={handleClose} style={{ marginRight: '10px' }}>
+                <Button variant="outlined" onClick={handleClose} style={{ marginRight: '10px', color: '#e91e63', borderColor: '#e91e63' }}>
                   Cerrar
                 </Button>
-                <Button variant="contained" color="primary" type="submit">
-                  {isEditMode ? 'Guardar Cambios' : 'Añadir'}
+                <Button variant="contained" color="primary" type="submit" style={{ backgroundColor: '#e91e63', color: '#fff' }}>
+                  {isEditMode ? 'Guardar Cambios' : 'Añadir'} 
+                  
                 </Button>
               </div>
             </Form>

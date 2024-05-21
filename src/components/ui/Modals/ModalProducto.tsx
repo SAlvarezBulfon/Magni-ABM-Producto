@@ -15,10 +15,9 @@ import '../TextFieldValue/textFieldValue.css';
 import TableComponent from '../TableComponent/TableComponent';
 import Column from '../../../types/Column';
 import IProductoDetalle from '../../../types/IProductoDetalle';
-import '../../../utils/swal.css'
+import '../../../utils/swal.css';
 import ICategoria from '../../../types/ICategoria';
 import CategoriaService from '../../../services/CategoriaService';
-
 
 interface ModalProductoProps {
     modalName: string;
@@ -98,7 +97,6 @@ const ModalProducto: React.FC<ModalProductoProps> = ({
         precioVenta: Yup.number().required('Campo requerido'),
     });
 
-
     const onDeleteProductoDetalle = async (productoDetalle: IProductoDetalle) => {
         try {
             if (isEditMode && productoAEditar) {
@@ -162,20 +160,25 @@ const ModalProducto: React.FC<ModalProductoProps> = ({
         }
     };
 
-
-
     const columns: Column[] = [
         {
             id: "ingrediente",
-            label: "Ingrediente",
-            renderCell: (element) => <>{element?.articuloInsumo?.denominacion || 'N/A'}</>
+            label: "",
+            renderCell: (element) => (
+                <Typography variant="h6" fontWeight="bold">
+                    {element?.articuloInsumo?.denominacion || 'N/A'}
+                </Typography>
+            )
         },
         {
-            id: "unidadMedida",
-            label: "Unidad de Medida",
-            renderCell: (element) => <>{element?.articuloInsumo?.unidadMedida?.denominacion || 'N/A'}</>
-        },
-        { id: "cantidad", label: "Cantidad", renderCell: (element) => <>{element?.cantidad || 'N/A'}</> },
+            id: "cantidadYUnidadMedida",
+            label: "",
+            renderCell: (element) => (
+                <>
+                    {element?.cantidad || 'N/A'} {element?.articuloInsumo?.unidadMedida?.denominacion || 'N/A'}
+                </>
+            )
+        }
     ];
 
     const handleSubmit = async (values: IProducto) => {
@@ -186,34 +189,24 @@ const ModalProducto: React.FC<ModalProductoProps> = ({
                 tiempoEstimadoMinutos: values.tiempoEstimadoMinutos,
                 precioVenta: values.precioVenta,
                 preparacion: values.preparacion,
-                idUnidadMedida: unidadMedidaProducto, // <-- Utilizamos la unidad de medida seleccionada en el formulario
+                idUnidadMedida: unidadMedidaProducto,
                 idsArticuloManufacturadoDetalles: dataIngredients.map((detalle) => detalle.id),
             };
     
             let response;
     
             if (isEditMode && productoAEditar) {
-                // Si estamos en modo de edición, primero actualizamos los detalles del producto
-                // Luego actualizamos el producto con los detalles actualizados
-                const updatedProduct = {
-                    ...productoAEditar,
-                    idUnidadMedida: unidadMedidaProducto,
-                    idsArticuloManufacturadoDetalles: dataIngredients.map((detalle) => detalle.id),
-                };
-                await productoService.put(`${URL}/ArticuloManufacturado`, productoAEditar.id, updatedProduct);
-
-                if (dataIngredients.length > 0) {
-                    const newIngredients = dataIngredients.filter((detalle) => !productoAEditar.idsArticuloManufacturadoDetalles.includes(detalle.id));
-                    updatedProduct.idsArticuloManufacturadoDetalles.push(...newIngredients.map((detalle) => detalle.id));
-                }
-
-                
+                await Promise.all(dataIngredients.map(async (detalle) => {
+                    if (!detalle.id) {
+                        await productoDetalleService.post(`${URL}/ArticuloManufacturadoDetalle`, detalle);
+                    } else {
+                        await productoDetalleService.put(`${URL}/ArticuloManufacturadoDetalle`, detalle.id, detalle);
+                    }
+                }));
+    
                 response = await productoService.put(`${URL}/ArticuloManufacturado`, productoAEditar.id, productoPost);
-                getProductos();
             } else {
-                
                 response = await productoService.post(`${URL}/ArticuloManufacturado`, productoPost);
-                getProductos();
             }
     
             if (response) {
@@ -225,7 +218,7 @@ const ModalProducto: React.FC<ModalProductoProps> = ({
                         container: 'my-swal',
                     },
                 });
-                getProductos();
+                await getProductos();  // Actualiza los productos después de guardar
             } else {
                 throw new Error('No se recibió una respuesta del servidor.');
             }
@@ -242,7 +235,6 @@ const ModalProducto: React.FC<ModalProductoProps> = ({
     
             if (!isEditMode) {
                 try {
-                    // Si ocurrió un error al enviar los datos en modo de añadir, eliminamos los detalles creados
                     await Promise.all(dataIngredients.map(async (detalle) => {
                         await productoDetalleService.delete(`${URL}/ArticuloManufacturadoDetalle`, detalle.id);
                     }));
@@ -252,21 +244,19 @@ const ModalProducto: React.FC<ModalProductoProps> = ({
             }
         }
     };
-
+    
     useEffect(() => {
         fetchCategoria();
         fetchUnidadesMedida();
         fetchInsumos();
         if (!isEditMode) {
             setDataIngredients([]);
-
         }
         if (isEditMode && productoAEditar) {
             fetchProductoDetalle();
             setUnidadMedidaProducto(productoAEditar.idUnidadMedida);
         }
     }, [isEditMode, productoAEditar]);
-
 
     useEffect(() => {
         if (selectedInsumoId !== null) {
@@ -290,29 +280,41 @@ const ModalProducto: React.FC<ModalProductoProps> = ({
         >
             <TextFieldValue label="Nombre" name="denominacion" type="text" placeholder="Nombre" />
             <TextFieldValue label="Descripción" name="descripcion" type="text" placeholder="Descripción" />
-            <TextFieldValue label="Precio de venta" name="precioVenta" type="number" placeholder="Precio" />
-            <TextFieldValue label="Tiempo Estimado (minutos)" name="tiempoEstimadoMinutos" type="number" placeholder="Tiempo Estimado" />
+
+            <Grid container spacing={2} alignItems="center">
+                <Grid item xs={4}>
+                    <TextFieldValue label="Precio de venta" name="precioVenta" type="number" placeholder="Precio" />
+                </Grid>
+                <Grid item xs={4}>
+                    <TextFieldValue label="Tiempo Estimado (minutos)" name="tiempoEstimadoMinutos" type="number" placeholder="Tiempo Estimado" />
+                </Grid>
+                <Grid item xs={4}>
+                    <Box mt={2}>
+                        <FormControl fullWidth>
+                            <label className='label' style={{ color: 'grey' }}>Unidad de Medida del Producto</label>
+                            <Select
+                                labelId="unidadMedidaProductoLabel"
+                                id="unidadMedidaProducto"
+                                value={unidadMedidaProducto}
+                                onChange={(e) => setUnidadMedidaProducto(e.target.value as number)}
+                                displayEmpty
+                            >
+                                <MenuItem disabled value="">
+                                    Seleccione una unidad de medida
+                                </MenuItem>
+                                {unidadMedidaOptions.map((unidad) => (
+                                    <MenuItem key={unidad.id} value={unidad.id}>
+                                        {unidad.denominacion}
+                                    </MenuItem>
+                                ))}
+                            </Select>
+                        </FormControl>
+                    </Box>
+                </Grid>
+            </Grid>
+
             <TextFieldValue label="Preparación" name="preparacion" type="textarea" placeholder="Preparación" />
 
-            <FormControl fullWidth>
-                <label className='label' style={{ marginTop: '16px' }}>Unidad de Medida del Producto</label>
-                <Select
-                    labelId="unidadMedidaProductoLabel"
-                    id="unidadMedidaProducto"
-                    value={unidadMedidaProducto}
-                    onChange={(e) => setUnidadMedidaProducto(e.target.value as number)}
-                    displayEmpty
-                >
-                    <MenuItem disabled value="">
-                        Seleccione una unidad de medida para el producto
-                    </MenuItem>
-                    {unidadMedidaOptions.map((unidad) => (
-                        <MenuItem key={unidad.id} value={unidad.id}>
-                            {unidad.denominacion}
-                        </MenuItem>
-                    ))}
-                </Select>
-            </FormControl>
             <Typography variant="h6" align="center" gutterBottom>
                 Ingredientes
             </Typography>
@@ -344,7 +346,7 @@ const ModalProducto: React.FC<ModalProductoProps> = ({
                     </Grid>
                     <Grid item xs={3}>
                         <FormControl fullWidth>
-                        <Select
+                            <Select
                                 value={selectedInsumoId || ''}
                                 onChange={(e) => setSelectedInsumoId(e.target.value as number)}
                                 displayEmpty
@@ -388,6 +390,7 @@ const ModalProducto: React.FC<ModalProductoProps> = ({
                             variant="contained"
                             color="primary"
                             disabled={!selectedInsumoId || cantidadInsumo <= 0}
+                            style={{ backgroundColor: '#e91e63', color: '#fff' }}
                         >
                             Añadir
                         </Button>
@@ -399,7 +402,6 @@ const ModalProducto: React.FC<ModalProductoProps> = ({
                 columns={columns}
                 onDelete={onDeleteProductoDetalle}
             />
-
         </GenericModal>
     );
 };
